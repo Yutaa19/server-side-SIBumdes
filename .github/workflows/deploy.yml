@@ -25,6 +25,8 @@ jobs:
       # Menjalankan seluruh Unit & Integration Test yang telah kita buat
       - name: Run Tests
         run: bun run test
+        env:
+          JWT_SECRET: "rahasia_untuk_testing_saja"
 
   # TAHAP 2: DEPLOY KE VPS
   deploy:
