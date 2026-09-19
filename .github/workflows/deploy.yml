@@ -24,7 +24,7 @@ jobs:
 
       # Menjalankan seluruh Unit & Integration Test yang telah kita buat
       - name: Run Tests
-        run: bun test
+        run: bun run test
 
   # TAHAP 2: DEPLOY KE VPS
   deploy:
