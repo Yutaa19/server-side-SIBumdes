@@ -3,7 +3,7 @@ name: SIBUMDES CI/CD Pipeline
 on:
   push:
     branches:
-      - main # Pipeline jalan otomatis jika ada push ke branch main
+      - master # Pipeline jalan otomatis jika ada push ke branch master
 
 jobs:
   # TAHAP 1: TESTING & BUILD
@@ -44,7 +44,7 @@ jobs:
             cd /var/www/sibumdes/server
             
             # 2. Ambil kode terbaru dari GitHub
-            git pull origin main
+            git pull origin master
             
             # 3. Install jika ada package baru
             bun install
