@@ -1,0 +1,53 @@
+name: SIBUMDES CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main # Pipeline jalan otomatis jika ada push ke branch main
+
+jobs:
+  # TAHAP 1: TESTING & BUILD
+  test:
+    name: Build & Test Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+
+      # Menjalankan seluruh Unit & Integration Test yang telah kita buat
+      - name: Run Tests
+        run: bun test
+
+  # TAHAP 2: DEPLOY KE VPS
+  deploy:
+    name: Deploy to VPS Production
+    needs: test # Deploy tidak akan jalan kalau Tahap 1 (test) gagal
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remote SSH into VPS & Restart Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            # 1. Pindah ke folder project di dalam VPS
+            cd /var/www/sibumdes/server
+            
+            # 2. Ambil kode terbaru dari GitHub
+            git pull origin main
+            
+            # 3. Install jika ada package baru
+            bun install
+            
+            # 4. Restart aplikasi menggunakan PM2
+            pm2 restart sibumdes-api

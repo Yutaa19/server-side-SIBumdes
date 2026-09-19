@@ -1,0 +1,59 @@
+const { Sequelize, DataTypes } = require('sequelize')
+const config = require('../config/config')
+
+const isTest = process.env.NODE_ENV === 'test'
+
+// Inisialisasi koneksi Sequelize
+const sequelize = isTest 
+    ? new Sequelize({ dialect: 'sqlite', storage: ':memory:', logging: false })
+    : new Sequelize(config.db.database, config.db.username, config.db.password, {
+        host: config.db.host,
+        port: config.db.port,
+        dialect: config.db.dialect,
+        logging: false // Ubah ke console.log jika ingin melihat query SQL yang dieksekusi
+    })
+
+// Test koneksi
+const testConnection = async () => {
+    if (isTest) return;
+    try {
+        await sequelize.authenticate()
+        console.log("Connection successfully to PostgreSQL....")
+    } catch(e) {
+        console.error("Connection failed to PostgreSQL....", e)
+    }
+}
+testConnection()
+
+// Inisialisasi Objek DB untuk menampung semua model
+const db = {}
+db.Sequelize = Sequelize
+db.sequelize = sequelize
+
+// Load Model
+db.user = require('../modules/users/user.model')(sequelize, DataTypes)
+db.kantor_pusat = require('../modules/kantor_pusat/kantor_pusat.model')(sequelize, DataTypes)
+db.internet = require('../modules/internet/internet.model')(sequelize, DataTypes)
+db.resik = require('../modules/resik/resik.model')(sequelize, DataTypes)
+
+// Terapkan relasi (Associations) jika ada
+Object.keys(db).forEach(modelName => {
+    if (db[modelName].associate) {
+        db[modelName].associate(db)
+    }
+})
+
+// === SCRIPT MIGRASI OTOMATIS ===
+// memanggil function ini di file server utama (app.js / server.js)
+db.syncDatabase = async () => {
+    try {
+        // alter: true akan mengubah tabel yang sudah ada agar sesuai dengan model terbaru tanpa menghapus data.
+        // Jika pakai force: true, SEMUA DATA AKAN DIHAPUS (DROP TABLE) lalu dibuat ulang.
+        await db.sequelize.sync({ alter: true })
+        console.log('Database ter-sinkronisasi (Migrasi Selesai)!')
+    } catch (error) {
+        console.error('Gagal melakukan sinkronisasi database:', error)
+    }
+}
+
+module.exports = db
